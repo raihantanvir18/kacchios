@@ -58,3 +58,45 @@ char serial_getc(void) {
     while (!serial_received());
     return inb(COM1);
 }
+
+int serial_try_getc(char* out) {
+    if (!out) {
+        return 0;
+    }
+    if (!serial_received()) {
+        return 0;
+    }
+    *out = inb(COM1);
+    return 1;
+}
+
+void serial_put_uint(uint32_t value) {
+    char buf[11];
+    int i = 0;
+
+    if (value == 0) {
+        serial_putc('0');
+        return;
+    }
+
+    while (value > 0 && i < (int)sizeof(buf) - 1) {
+        buf[i++] = (char)('0' + (value % 10));
+        value /= 10;
+    }
+
+    while (i > 0) {
+        serial_putc(buf[--i]);
+    }
+}
+
+static char hex_digit(uint8_t v) {
+    v &= 0xF;
+    return (v < 10) ? (char)('0' + v) : (char)('A' + (v - 10));
+}
+
+void serial_put_hex32(uint32_t value) {
+    serial_puts("0x");
+    for (int shift = 28; shift >= 0; shift -= 4) {
+        serial_putc(hex_digit((uint8_t)(value >> shift)));
+    }
+}

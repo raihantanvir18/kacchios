@@ -87,8 +87,15 @@ int process_create(const char* name, process_entry_t entry, void* arg, size_t st
     p->ctx.esi = 0;
     p->ctx.edi = 0;
     p->ctx.eflags = 0x2; /* Keep interrupts disabled; bit 1 must stay set */
-    p->ctx.eip = (uint32_t)process_trampoline;
-    p->ctx.esp = (uint32_t)(stack_top - 16); /* leave some space */
+    p->ctx.eip = (uint32_t)process_trampoline; /* informational; ctx_switch returns via stack */
+
+    /*
+     * ctx_switch() resumes a process via 'ret', so the initial stack must contain
+     * a return address pointing at process_trampoline.
+     */
+    uint32_t* sp = (uint32_t*)stack_top;
+    *(--sp) = (uint32_t)process_trampoline;
+    p->ctx.esp = (uint32_t)sp;
 
     /* Copy name */
     int i = 0;
@@ -106,12 +113,50 @@ void process_reap_terminated(void) {
     for (int i = 0; i < MAX_PROCESSES; i++) {
         process_t* p = &proc_table[i];
         if (p->in_use && p->state == PROC_TERMINATED && p->needs_reap) {
+            serial_puts("Reaping PID ");
+            serial_put_uint((uint32_t)p->pid);
+            serial_puts(" (stack freed)\n");
             if (p->stack_base) {
                 kfree(p->stack_base);
             }
             p->in_use = 0;
             p->needs_reap = 0;
         }
+    }
+}
+
+static const char* state_str(process_state_t state) {
+    switch (state) {
+        case PROC_CURRENT: return "CURRENT";
+        case PROC_READY: return "READY";
+        case PROC_BLOCKED: return "BLOCKED";
+        case PROC_TERMINATED: return "TERMINATED";
+        default: return "?";
+    }
+}
+
+void process_dump(void) {
+    serial_puts("PID  STATE        NAME\n");
+    serial_puts("------------------------\n");
+    for (int i = 0; i < MAX_PROCESSES; i++) {
+        process_t* p = &proc_table[i];
+        if (!p->in_use) {
+            continue;
+        }
+
+        serial_put_uint((uint32_t)p->pid);
+        serial_puts("  ");
+        serial_puts(state_str(p->state));
+
+        /* crude spacing */
+        if (p->state == PROC_READY) serial_puts("       ");
+        else if (p->state == PROC_CURRENT) serial_puts("     ");
+        else if (p->state == PROC_BLOCKED) serial_puts("     ");
+        else serial_puts("  ");
+
+        serial_puts("  ");
+        serial_puts(p->name);
+        serial_puts("\n");
     }
 }
 

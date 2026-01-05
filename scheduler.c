@@ -164,25 +164,17 @@ void scheduler_terminate_current(void) {
 __asm__ (
 ".globl ctx_switch\n"
 "ctx_switch:\n"
-"    mov 4(%esp), %eax\n"
-"    mov 8(%esp), %edx\n"
-"    mov %ebx, 0(%eax)\n"
+"    mov 4(%esp), %eax\n"     /* old_ctx */
+"    mov 8(%esp), %edx\n"     /* new_ctx */
+"    mov %ebx, 0(%eax)\n"     /* save callee-saved regs */
 "    mov %ebp, 4(%eax)\n"
 "    mov %esi, 8(%eax)\n"
 "    mov %edi, 12(%eax)\n"
-"    mov %esp, 16(%eax)\n"
-"    mov 0(%esp), %ecx\n"
-"    mov %ecx, 20(%eax)\n"
-"    pushf\n"
-"    pop %ecx\n"
-"    mov %ecx, 24(%eax)\n"
-"    mov 24(%edx), %ecx\n"
-"    push %ecx\n"
-"    popf\n"
-"    mov 16(%edx), %esp\n"
+"    mov %esp, 16(%eax)\n"    /* save stack pointer */
+"    mov 16(%edx), %esp\n"    /* restore stack pointer */
+"    mov 0(%edx), %ebx\n"     /* restore callee-saved regs */
 "    mov 4(%edx), %ebp\n"
-"    mov 0(%edx), %ebx\n"
 "    mov 8(%edx), %esi\n"
 "    mov 12(%edx), %edi\n"
-"    jmp *20(%edx)\n"
+"    ret\n"                    /* return into resumed process */
 );

@@ -50,5 +50,6 @@ process_t* process_current(void);
 process_t* process_get(int pid);
 void process_set_current(process_t* p);
 void process_reap_terminated(void);
+void process_dump(void);
 
 #endif
