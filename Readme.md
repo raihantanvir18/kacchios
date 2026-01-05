@@ -138,3 +138,15 @@ kacchiOS was created as an educational tool for teaching operating system concep
 - Inspired by XINU OS
 - Built with guidance from OSDev community
 - Thanks to all students who have contributed
+
+## 🛠️ Windows/WSL Build Notes
+
+- Use WSL or an i686 cross-toolchain (gcc/ld/as) with make available.
+- In WSL: `sudo apt-get install build-essential qemu-system-x86 gcc-multilib` then `make clean && make`.
+- Run with `make run` (serial stdio). For a GUI window, use `make run-vga`.
+
+## 🧾 Submission Checklist
+
+- Fill docs/Checklist.md and docs/Project_Report.md, then export both to PDF as required.
+- Place Demo_Video.mp4 under video/ before zipping.
+- Zip with required naming: Series_XX_Section_X_Group_XX_kacchiOS.zip including src/, docs/, scheduler.c, scheduler.h, Makefile, and README.
